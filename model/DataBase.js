@@ -13,6 +13,9 @@ import {
 
 let latestMsg = {}
 
+let guildLatestMsgId = {}
+let QQBotLatestReply = {}
+
 async function getMsg(where, other) {
     if (Object.hasOwnProperty.call(where, 'message_id') && where.message_id == undefined) {
         return null
@@ -31,7 +34,7 @@ async function getMsg(where, other) {
 
 async function setMsg(value) {
     if (Array.isArray(value.message_id) || !value.seq || !value.rand) {
-        return
+        return 
     }
     if (existSQL) {
         await saveMessage_id(value)

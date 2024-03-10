@@ -24,6 +24,11 @@ export class setting extends plugin {
                     permission: 'master'
                 },
                 {
+                    reg: '^#ws连接说明$',
+                    fnc: 'help',
+                    permission: 'master'
+                },
+                {
                     reg: sysCfgReg,
                     fnc: 'setting',
                     permission: 'master'
@@ -32,7 +37,7 @@ export class setting extends plugin {
                     reg: groupReg,
                     fnc: 'modifyGroup',
                     permission: 'master'
-                },
+},
                 {
                     reg: '^#ws状态$',
                     fnc: 'view',
@@ -229,7 +234,7 @@ export class setting extends plugin {
                     '连接名字,连接类型\n',
                     '---------------------------------\n',
                     '连接名字: 用来区分每个连接\n',
-                    '连接类型: 1:反向ws连接 2:正向ws连接 3:gscore连接 5:正向http 6:反向http'
+                    '连接类型: 1:反向ws连接 2:正向ws连接 3:gscore连接 4:red连接 5:正向http 6:反向http'
                 ])
                 // await this.reply([
                 //     '请一次性发送以下参数:\n',
@@ -301,7 +306,7 @@ export class setting extends plugin {
             return false
         }
         if (addWsMsg.length == 2) {
-            for (const i of Config.servers) {
+for (const i of Config.servers) {
                 if (i.name == addWsMsg[0]) {
                     if (Array.isArray(i.uin)) {
                         if (i.uin.some(m => m == this.e.self_id)) {
@@ -364,6 +369,18 @@ export class setting extends plugin {
                         '重连间隔: 断开连接时每隔多少秒进行重新连接\n',
                         '最大重连次数: 达到这个数之后不进行重连,为0时会不断重连\n',
                         'access-token: 访问秘钥'
+                    ])
+                    break;
+                case '4':
+                    await this.reply([
+                        '请继续发送以下参数,用逗号分割\n',
+                        '---------------------------------\n',
+                        '连接地址,Token(为空尝试自动获取),重连间隔(默认5),最大重连次数(默认0)\n',
+                        '---------------------------------\n',
+                        '连接地址: Host:Port,比如127.0.0.1:16530\n',
+                        'Token: Chronocat 连接 Token\n',
+                        '重连间隔: 断开连接时每隔多少秒进行重新连接\n',
+                        '最大重连次数: 达到这个数之后不进行重连,为0时会不断重连',
                     ])
                     break;
                 case '5':
@@ -603,6 +620,19 @@ export class setting extends plugin {
         return true
     }
 
+    async help() {
+        await this.reply([
+            'ws连接说明:\n',
+            '1.连接名字:一般代表需要连接的bot名字\n',
+            '2.连接地址:需要连接的ws地址或者本地开启的地址:端口\n',
+            '3.连接类型:1.反向ws连接 2.正向ws连接 3.gsuid_core专用连接\n',
+            '4.重连间隔:连接被断开之后每隔一段时间进行重新连接,单位秒,0代表不重连\n',
+            '5.最大重连次数:每次连接失败时+1,达到最大重连次数时停止重新连接,0代表一直重连\n',
+            '6.access-token:访问密钥'
+        ])
+        return true
+    }
+
     async checkDelWs() {
         if (!this.e.msg || !this.e.isMaster) {
             return false
@@ -647,21 +677,21 @@ export class setting extends plugin {
     async view() {
         const msg = []
         for (const s of allSocketList) {
-            let status = '已关闭'
-            switch (s.status) {
-                case 0:
-                    status = '已关闭'
-                    break;
-                case 1:
-                    status = '正常'
-                    break
-                case 3:
-                    status = '断线重连中'
-                    break
-                default:
-                    break;
-            }
-            let str = `连接名字: ${s.name}\n连接类型: ${s.type}\n当前状态: ${status}`
+                        let status = '已关闭'
+                                switch (s.status) {
+                        case 0:
+                            status = '已关闭'
+                            break;
+                        case 1:
+                            status = '正常'
+                            break
+                        case 3:
+                            status = '断线重连中'
+                            break
+                        default:
+                            break;
+                    }
+                let str = `连接名字: ${s.name}\n连接类型: ${s.type}\n当前状态: ${status}`
             if (!this.e.isGroup && this.e.isMaster) {
                 str += `\n连接地址: ${s.address}\nBot账号: ${s.uin}`
                 if (msg.length != 0) str = '\n---------------\n' + str
@@ -680,9 +710,9 @@ export class setting extends plugin {
             }
         }
         if (msg.length > 0) {
-            if (!this.e.isGroup) {
-                await this.reply(msg)
-            } else {
+if (!this.e.isGroup) {
+            await this.reply(msg)
+} else {
                 await toImg(msg, this.e)
             }
         } else {

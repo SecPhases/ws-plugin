@@ -2,6 +2,8 @@ import Client from "./Client.js";
 import { Config, Version } from './index.js'
 import { sleep, getUser_id } from '../model/index.js'
 import _ from "lodash";
+import { redAdapter } from '../model/red/index.js'
+// import { satoriAdapter } from '../model/satori/index.js'
 
 let sendSocketList = []
 let allSocketList = []
@@ -54,7 +56,7 @@ async function createWebSocket(data) {
         data.closed = data.close
         delete data.close
     }
-    if (Array.isArray(data.uin)) {
+if (Array.isArray(data.uin)) {
         for (const uin of data.uin) {
             const str = String(uin)
             const i = _.cloneDeep(data)
@@ -65,7 +67,7 @@ async function createWebSocket(data) {
         return
     }
     const client = new Client(data)
-    if (typeof client.self_id === 'string') {
+if (typeof client.self_id === 'string') {
         client.self_id = await getUser_id({ user_id: client.self_id })
         client.adapter = adapterName[client.uin?.substring?.(0, 3)]
     } else {
@@ -115,6 +117,11 @@ async function createWebSocket(data) {
             client.createGSUidWs()
             sendSocketList.push(client)
             break
+        case 4:
+            if (Version.isTrss) return
+            // client.createQQNT()
+            redAdapter.connect(client)
+            break
         case 5:
             if (!await checkVersion(data)) return
             client.createHttp()
@@ -139,22 +146,21 @@ async function checkVersion(data) {
         if (!data.uin) {
             logger.warn(`[ws-plugin] ${data.name} 缺少配置项uin 请删除连接后重新#ws添加连接`)
             return false
+        } else {
+            let log = false
+            for (let i = 0; i < 20; i++) {
+                if (Version.protocol.some(i => i == Bot[data.uin]?.version?.name)) {
+                    return true
+                }
+                if (!log) {
+                    logger.warn(`[ws-plugin] ${data.name} 暂未适配当前协议端或未连接对应协议端,20秒后重新判断`)
+                    log = true
+                }
+                await sleep(1000)
+            }
+            logger.warn(`[ws-plugin] ${data.name} 暂未适配当前协议端或未连接对应协议端 ${data.uin}`)
+            return false
         }
-        // else {
-        //     let log = false
-        //     for (let i = 0; i < 20; i++) {
-        //         if (Version.protocol.some(i => i == Bot[data.uin]?.version?.name)) {
-        //             return true
-        //         }
-        //         if (!log) {
-        //             logger.warn(`[ws-plugin] ${data.name} 暂未适配当前协议端或未连接对应协议端,20秒后重新判断,uin:${data.uin}`)
-        //             log = true
-        //         }
-        //         await sleep(1000)
-        //     }
-        //     logger.warn(`[ws-plugin] ${data.name} 暂未适配当前协议端或未连接对应协议端,uin:${data.uin}`)
-        //     return false
-        // }
     } else if (Bot.uin == '88888') {
         if (!data.uin) {
             logger.warn(`[ws-plugin] ${data.name} 缺少配置项uin 请删除连接后重新#ws添加连接`)
@@ -169,14 +175,20 @@ async function modifyWebSocket(target) {
     switch (target.type) {
         case 'add':
         case 'open':
-            await createWebSocket(target.data)
+            if (target.data.type == 4) {
+                const client = new Client(target.data)
+                setAllSocketList(client)
+                redAdapter.connect(client)
+            } else {
+                createWebSocket(target.data)
+            }
             break;
         case 'del':
         case 'close':
             for (const i of allSocketList) {
-                const reg = new RegExp(`^${target.data.name}\(.{1,6}\)$`)
-                if (i.name == target.data.name || reg.test(i.name)) {
+                if (i.name == target.data.name) {
                     i.close()
+                    break
                 }
             }
             break
