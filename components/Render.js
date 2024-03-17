@@ -7,7 +7,7 @@ function scale (pct = 1) {
 }
 
 const Render = {
-  async render (path, params, cfg = { retType: 'default' }) {
+  async render (path, params, cfg = { retType: 'default', saveId: '' }) {
     let { e } = cfg
     if (!e.runtime) {
       console.log('未找到e.runtime，请升级至最新版Yunzai')
@@ -26,8 +26,10 @@ const Render = {
         }
         let resPath = data.pluResPath
         const layoutPath = process.cwd() + '/plugins/ws-plugin/resources/common/layout/'
+        const saveId = (cfg.saveId || e?.user_id || data.saveId) + '_' + Math.random().toString().slice(-6)
         return {
           ...data,
+          saveId,
           _res_path: resPath,
           _ws_path: resPath,
           _layout_path: layoutPath,
